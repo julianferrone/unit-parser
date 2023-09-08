@@ -3,8 +3,8 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
-#[derive(PartialEq, Eq)]
-struct PhysicalUnit {
+#[derive(PartialEq, Eq, Debug)]
+struct PhysicalQuantity {
     time: isize,
     length: isize,
     mass: isize,
@@ -14,7 +14,7 @@ struct PhysicalUnit {
     luminous_intensity: isize,
 }
 
-impl PhysicalUnit {
+impl PhysicalQuantity {
     fn new(
         time: isize,
         length: isize,
@@ -36,7 +36,7 @@ impl PhysicalUnit {
     }
 }
 
-impl Display for PhysicalUnit {
+impl Display for PhysicalQuantity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match (
             self.time,
@@ -83,11 +83,11 @@ impl Display for PhysicalUnit {
     }
 }
 
-impl Mul for PhysicalUnit {
-    type Output = PhysicalUnit;
+impl Mul for PhysicalQuantity {
+    type Output = PhysicalQuantity;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        let product = PhysicalUnit::new(
+        let product = PhysicalQuantity::new(
             self.time + rhs.time,
             self.length + rhs.length,
             self.mass + rhs.mass,
@@ -100,11 +100,11 @@ impl Mul for PhysicalUnit {
     }
 }
 
-impl Div for PhysicalUnit {
-    type Output = PhysicalUnit;
+impl Div for PhysicalQuantity {
+    type Output = PhysicalQuantity;
 
     fn div(self, rhs: Self) -> Self::Output {
-        let quotient = PhysicalUnit::new(
+        let quotient = PhysicalQuantity::new(
             self.time - rhs.time,
             self.length - rhs.length,
             self.mass - rhs.mass,
@@ -118,13 +118,16 @@ impl Div for PhysicalUnit {
 }
 
 struct ConcreteNumber {
-    quantity: f64,
-    unit: PhysicalUnit,
+    magnitude: f64,
+    physical_quantity: PhysicalQuantity,
 }
 
 impl ConcreteNumber {
-    fn new(quantity: f64, unit: PhysicalUnit) -> Self {
-        Self { quantity, unit }
+    fn new(quantity: f64, unit: PhysicalQuantity) -> Self {
+        Self {
+            magnitude: quantity,
+            physical_quantity: unit,
+        }
     }
 }
 
@@ -136,11 +139,11 @@ impl Add for ConcreteNumber {
     type Output = Result<ConcreteNumber, crate::CustomError>;
 
     fn add(self, rhs: Self) -> Self::Output {
-        if self.unit != rhs.unit {
+        if self.physical_quantity != rhs.physical_quantity {
             Err(CustomError::AddingTwoDifferentUnits)
         } else {
-            let quantity: f64 = self.quantity + rhs.quantity;
-            let sum: ConcreteNumber = ConcreteNumber::new(quantity, self.unit);
+            let quantity: f64 = self.magnitude + rhs.magnitude;
+            let sum: ConcreteNumber = ConcreteNumber::new(quantity, self.physical_quantity);
             Ok(sum)
         }
     }
@@ -150,11 +153,11 @@ impl Sub for ConcreteNumber {
     type Output = Result<ConcreteNumber, crate::CustomError>;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        if self.unit != rhs.unit {
+        if self.physical_quantity != rhs.physical_quantity {
             Err(CustomError::AddingTwoDifferentUnits)
         } else {
-            let quantity: f64 = self.quantity - rhs.quantity;
-            let difference: ConcreteNumber = ConcreteNumber::new(quantity, self.unit);
+            let quantity: f64 = self.magnitude - rhs.magnitude;
+            let difference: ConcreteNumber = ConcreteNumber::new(quantity, self.physical_quantity);
             Ok(difference)
         }
     }
@@ -164,8 +167,8 @@ impl Mul for ConcreteNumber {
     type Output = ConcreteNumber;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        let quantity: f64 = self.quantity * rhs.quantity;
-        let unit: PhysicalUnit = self.unit * rhs.unit;
+        let quantity: f64 = self.magnitude * rhs.magnitude;
+        let unit: PhysicalQuantity = self.physical_quantity * rhs.physical_quantity;
         let product: ConcreteNumber = ConcreteNumber::new(quantity, unit);
         product
     }
@@ -175,8 +178,8 @@ impl Div for ConcreteNumber {
     type Output = ConcreteNumber;
 
     fn div(self, rhs: Self) -> Self::Output {
-        let quantity: f64 = self.quantity / rhs.quantity;
-        let unit: PhysicalUnit = self.unit / rhs.unit;
+        let quantity: f64 = self.magnitude / rhs.magnitude;
+        let unit: PhysicalQuantity = self.physical_quantity / rhs.physical_quantity;
         let quotient: ConcreteNumber = ConcreteNumber::new(quantity, unit);
         quotient
     }
