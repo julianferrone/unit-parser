@@ -56,12 +56,18 @@ impl Display for PhysicalUnit {
             ( 0,  0,  0,  0,  0,  0,  1) => write!(f, "Unit(LuminousIntensity)"), // Candela (cd)
             (-1,  0,  0,  0,  0,  0,  0) => write!(f, "Unit(Frequency)"), // Hertz (Hz) = second^-1
             (-2,  1,  1,  0,  0,  0,  0) => write!(f, "Unit(Force)"), // Newton (N)= kg * m * s^-2
-            (-2, -1,  1,  0,  0,  0,  0) => write!(f, "Unit(Pressure)"), // Pascal (Pa)= N / m^-2 = kg * m^-1 * s^-2
+            (-2, -1,  1,  0,  0,  0,  0) => write!(f, "Unit(Pressure)"), // Pascal (Pa)= N * m^-2 = kg * m^-1 * s^-2
             (-2,  2,  1,  0,  0,  0,  0) => write!(f, "Unit(Energy)"), // Joule (J) = N * m = kg * m^2 * s^-2
-            (-3,  2,  1,  0,  0,  0,  0) => write!(f, "Unit(Power)"), // Power
-            ( 1,  0,  0,  1,  0,  0,  0) => write!(f, "Unit(ElectricCharge)"), //
-            (-2, -1,  1, -1,  0,  0,  0) => write!(f, "Unit(ElectricPotential)"), //
-            (-1, -1,  1, -1,  0,  0,  0) => write!(f, "Unit(ElectricPotential)"), // Weber = volt * second
+            (-3,  2,  1,  0,  0,  0,  0) => write!(f, "Unit(Power)"), // Power (W) = J * s^-1 = kg * m^2 * s^-3
+            ( 1,  0,  0,  1,  0,  0,  0) => write!(f, "Unit(ElectricCharge)"), // Coulomb (C) = A * s
+            (-3,  2,  1, -1,  0,  0,  0) => write!(f, "Unit(ElectricPotential)"), // Volt (V) = J * C^-1 = kg * m^2 * s^-3 * A^-1
+            (-2,  2,  1, -1,  0,  0,  0) => write!(f, "Unit(MagneticFlux)"), // Weber (Wb) = V * s = kg * m^2 * s^-2 * A^-1
+            (-2,  0,  1, -1,  0,  0,  0) => write!(f, "Unit(MagneticFluxDensity)"), // Tesla (T) = Wb * m^-2 = kg * s^-2 * A^-1
+            ( 4, -2, -1,  2,  0,  0,  0) => write!(f, "Unit(ElectricalCapacitance)"), // Farad (F) = kg^-1 * m^-2 * s^4 * A^2
+            (-3,  2,  1, -2,  0,  0,  0) => write!(f, "Unit(ElectricalResistance)"), // Ohm (Ω) = kg * m^2 * s^−3 * A^−2
+            ( 3, -2, -1,  2,  0,  0,  0) => write!(f, "Unit(ElectricalConductance)"), // Siemens (S) = kg^−1 * m^−2 * s^3 * A^2
+            (-2,  2,  1, -2,  0,  0,  0) => write!(f, "Unit(ElectricalInductance)"), // Henry (H) = kg * m^2 * s^−2 * A^−2
+            ( 1,  0,  0,  0,  0,  1,  0) => write!(f, "Unit(CatalyticActivity)"), // Katal (kat) = mol * s^-1
             _ => write!(
                 f,
                 "Unit(Time^{}, Length^{}, Mass^{}, Current^{}, Temperature^{}, AmountOfSubstance^{}, LuminousIntensity^{})",
