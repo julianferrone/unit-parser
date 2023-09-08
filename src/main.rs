@@ -1,9 +1,9 @@
 use std::{
-    fmt::{Debug, Display},
+    fmt::{format, Debug, Display},
     ops::{Add, Div, Mul, Sub},
 };
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 struct PhysicalQuantity {
     time: isize,
     length: isize,
@@ -69,29 +69,34 @@ impl Display for PhysicalQuantity {
             (-2, 2, 1, -2, 0, 0, 0) => write!(f, "H"),  // Henry (H) = kg * m^2 * s^−2 * A^−2
             (1, 0, 0, 0, 0, 1, 0) => write!(f, "kat"),  // Katal (kat) = mol * s^-1
             _ => {
-                let mut units: Vec<String> = vec![];
+                let mut units: Vec<(&str, isize)> = vec![];
                 if self.time != 0 {
-                    units.push(format!("s^{}", self.time));
+                    units.push(("s", self.time));
                 }
                 if self.length != 0 {
-                    units.push(format!("m^{}", self.length));
+                    units.push(("m", self.length));
                 }
                 if self.mass != 0 {
-                    units.push(format!("kg^{}", self.mass));
+                    units.push(("kg", self.mass));
                 }
                 if self.current != 0 {
-                    units.push(format!("A^{}", self.current));
+                    units.push(("A", self.current));
                 }
                 if self.temperature != 0 {
-                    units.push(format!("K^{}", self.temperature));
+                    units.push(("K", self.temperature));
                 }
                 if self.amount_of_substance != 0 {
-                    units.push(format!("mol^{}", self.amount_of_substance));
+                    units.push(("mol", self.amount_of_substance));
                 }
                 if self.luminous_intensity != 0 {
-                    units.push(format!("cd^{}", self.luminous_intensity));
+                    units.push(("cd", self.luminous_intensity));
                 }
-                let compound_unit: String = units.join(" * ");
+                units.sort_by(|a, b| a.0.cmp(b.0));
+                let concatenated: Vec<String> = units
+                    .into_iter()
+                    .map(|(unit, exponent)| format!("{unit}^{exponent}"))
+                    .collect();
+                let compound_unit: String = concatenated.join(" * ");
                 write!(f, "{}", compound_unit)
             }
         }
@@ -130,6 +135,12 @@ impl Debug for PhysicalQuantity {
             ( 3, -2, -1,  2,  0,  0,  0) => write!(f, "Unit(ElectricalConductance)"), // Siemens (S) = kg^−1 * m^−2 * s^3 * A^2
             (-2,  2,  1, -2,  0,  0,  0) => write!(f, "Unit(ElectricalInductance)"), // Henry (H) = kg * m^2 * s^−2 * A^−2
             ( 1,  0,  0,  0,  0,  1,  0) => write!(f, "Unit(CatalyticActivity)"), // Katal (kat) = mol * s^-1
+            ( 0,  2,  0,  0,  0,  0,  0) => write!(f, "Unit(Area)"),
+            ( 0,  3,  0,  0,  0,  0,  0) => write!(f, "Unit(Volume)"),
+            (-1,  1,  0,  0,  0,  0,  0) => write!(f, "Unit(Speed)"),
+            (-2,  1,  0,  0,  0,  0,  0) => write!(f, "Unit(Acceleration)"),
+            (-1,  3,  0,  0,  0,  0,  0) => write!(f, "Unit(VolumetricFlow)"),
+            (-1,  1,  1,  0,  0,  0,  0) => write!(f, "Unit(Momentum)"),
             _ => write!(
                 f,
                 "Unit(Time^{}, Length^{}, Mass^{}, Current^{}, Temperature^{}, AmountOfSubstance^{}, LuminousIntensity^{})",
@@ -179,7 +190,7 @@ impl Div for PhysicalQuantity {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct ConcreteNumber {
     magnitude: f64,
     physical_quantity: PhysicalQuantity,
@@ -257,8 +268,19 @@ impl Div for ConcreteNumber {
 fn main() {
     let length = ConcreteNumber::new(13.0, PhysicalQuantity::new(0, 1, 0, 0, 0, 0, 0));
     println!("{} | {:?}", length, length);
-    let time = ConcreteNumber::new(136.0, PhysicalQuantity { time: 1, length: 0, mass: 0, current: 0, temperature: 0, amount_of_substance: 0, luminous_intensity: 0 });
+    let time = ConcreteNumber::new(
+        2.0,
+        PhysicalQuantity {
+            time: 1,
+            length: 0,
+            mass: 0,
+            current: 0,
+            temperature: 0,
+            amount_of_substance: 0,
+            luminous_intensity: 0,
+        },
+    );
     println!("{} | {:?}", time, time);
-    let all = ConcreteNumber::new(10.0, PhysicalQuantity { time: 1, length: 2, mass: 3, current: 4, temperature: 5, amount_of_substance: 6, luminous_intensity: 7 });
-    println!("{} | {:?}", all, all);
+    let acceleration = length / (time * time.clone());
+    println!("{} | {:?}", acceleration, acceleration);
 }
