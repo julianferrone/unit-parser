@@ -6,7 +6,7 @@ use std::{
 };
 
 #[derive(PartialEq, Eq, Clone, Copy)]
-struct PhysicalQuantity {
+pub struct PhysicalQuantity {
     time: isize,
     length: isize,
     mass: isize,
@@ -384,7 +384,7 @@ fn main() {
         "15   N m * 12 kg *   92",
     ];
     for input in inputs {
-        println!("{:?}", parser::concrete_number(input));
+        println!("{} => {:?}", input, parser::concrete_number(input));
     }
 }
 
