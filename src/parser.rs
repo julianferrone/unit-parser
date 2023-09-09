@@ -42,17 +42,63 @@ pub fn unit_as_tuple(input: &str) -> IResult<&str, (&str, isize)> {
 }
 
 fn unit_as_physical_quantity(input: &str) -> IResult<&str, PhysicalQuantity> {
-    map(unit_as_tuple, |(s, i)| match s {
-        "s" => PhysicalQuantityBuilder::new().time(i).build(),
-        "m" => PhysicalQuantityBuilder::new().length(i).build(),
-        "kg" => PhysicalQuantityBuilder::new().mass(i).build(),
-        "A" => PhysicalQuantityBuilder::new().current(i).build(),
-        "K" => PhysicalQuantityBuilder::new().temperature(i).build(),
-        "mol" => PhysicalQuantityBuilder::new()
-            .amount_of_substance(i)
-            .build(),
-        "cd" => PhysicalQuantityBuilder::new().luminous_intensity(i).build(),
-        _ => PhysicalQuantityBuilder::new().build(),
+    map(unit_as_tuple, |(s, i)| {
+        let pq = PhysicalQuantityBuilder::new();
+        match s {
+            "s" => pq.time(i).build(),
+            "m" => pq.length(i).build(),
+            "kg" => pq.mass(i).build(),
+            "A" => pq.current(i).build(),
+            "K" => pq.temperature(i).build(),
+            "mol" => pq.amount_of_substance(i).build(),
+            "cd" => pq.luminous_intensity(i).build(),
+            "Hz" => pq.time(i * -1).build(),
+            "N" => pq.time(i * -2).length(i).mass(i).build(),
+            "Pa" => pq.time(i * -2).length(-1 * i).mass(i).build(),
+            "J" => pq.time(i * -2).length(2 * i).mass(i).build(),
+            "W" => pq.time(i * -3).length(2 * i).mass(i).build(),
+            "C" => pq.time(i).current(i).build(),
+            "V" => pq
+                .time(i * -3)
+                .length(i * 2)
+                .mass(i)
+                .current(i * -1)
+                .build(),
+            "Wb" => pq
+                .time(i * -2)
+                .length(i * 2)
+                .mass(i)
+                .current(i * -1)
+                .build(),
+            "T" => pq.time(i * -2).mass(i).current(i * -1).build(),
+            "F" => pq
+                .time(i * 4)
+                .length(i * -2)
+                .mass(i * -1)
+                .current(i * 2)
+                .build(),
+            "ohm" | "Ω" => pq
+                .time(i * -3)
+                .length(i * 2)
+                .mass(i)
+                .current(i * -2)
+                .build(),
+            "S" => pq
+                .time(i * 3)
+                .length(i * -2)
+                .mass(i * -1)
+                .current(i * 2)
+                .build(),
+            "H" => pq
+                .time(i * -2)
+                .length(i * 2)
+                .mass(i)
+                .current(i * -2)
+                .build(),
+            "kat" => pq.time(i * -1).amount_of_substance(i).build(),
+            // dimensionless for now—should really be an error
+            _ => pq.build(),
+        }
     })(input)
 }
 
