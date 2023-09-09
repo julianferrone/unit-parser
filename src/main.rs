@@ -342,11 +342,12 @@ impl Div for ConcreteNumber {
     }
 }
 
-// fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
-//     let (input, (magnitude, physical_quantity)) = (float_from_str, ).parse(input)?;
-// };
-
-fn main() {}
+fn main() {
+    let inputs: Vec<&str> = vec!["3 m", "4 kg", "5 m^2", "12 kg m^2", "15   N m * 12 kg *   92"];
+    for input in inputs {
+        println!("{:?}", parser::concrete_number(input));
+    }
+}
 
 #[cfg(test)]
 mod tests {
