@@ -1,15 +1,21 @@
+use std::{
+    fmt::{self, Debug, Display, Formatter},
+    str::FromStr,
+};
+
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
     character::{
-        complete::{char, digit1},
+        complete::{char, digit1, multispace0, space0, multispace1},
         is_alphabetic, is_newline, is_space,
     },
-    combinator::{map, map_res, opt, recognize},
+    combinator::{fail, map, map_res, opt, recognize},
+    error::context,
     multi::{fold_many0, many0, many1, separated_list0},
     number::complete::{double, float},
-    sequence::{pair, preceded, separated_pair, tuple},
-    IResult,
+    sequence::{delimited, pair, preceded, separated_pair, tuple},
+    IResult, Parser,
 };
 
 use crate::{ConcreteNumber, ConcreteNumberBuilder, PhysicalQuantity, PhysicalQuantityBuilder};
@@ -99,7 +105,7 @@ fn unit_as_physical_quantity(input: &str) -> IResult<&str, PhysicalQuantity> {
 }
 
 fn units(input: &str) -> IResult<&str, Vec<PhysicalQuantity>> {
-    separated_list0(char(' '), unit_as_physical_quantity)(input)
+    separated_list0(multispace1, unit_as_physical_quantity)(input)
 }
 
 fn combined_unit(input: &str) -> IResult<&str, PhysicalQuantity> {
@@ -125,4 +131,115 @@ pub fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
                 .build()
         },
     )(input)
+}
+
+pub enum Expr {
+    Value(ConcreteNumber),
+    Add(Box<Expr>, Box<Expr>),
+    Sub(Box<Expr>, Box<Expr>),
+    Mul(Box<Expr>, Box<Expr>),
+    Div(Box<Expr>, Box<Expr>),
+    Paren(Box<Expr>),
+}
+
+#[derive(Debug)]
+pub enum Oper {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
+impl Display for Expr {
+    fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
+        use self::Expr::*;
+        match *self {
+            Value(val) => write!(format, "{}", val),
+            Add(ref left, ref right) => write!(format, "{} + {}", left, right),
+            Sub(ref left, ref right) => write!(format, "{} - {}", left, right),
+            Mul(ref left, ref right) => write!(format, "{} * {}", left, right),
+            Div(ref left, ref right) => write!(format, "{} / {}", left, right),
+            Paren(ref expr) => write!(format, "({})", expr),
+        }
+    }
+}
+
+impl Debug for Expr {
+    fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
+        use self::Expr::*;
+        match *self {
+            Value(val) => write!(format, "{}", val),
+            Add(ref left, ref right) => write!(format, "({:?} + {:?})", left, right),
+            Sub(ref left, ref right) => write!(format, "({:?} - {:?})", left, right),
+            Mul(ref left, ref right) => write!(format, "({:?} * {:?})", left, right),
+            Div(ref left, ref right) => write!(format, "({:?} / {:?})", left, right),
+            Paren(ref expr) => write!(format, "[{:?}]", expr),
+        }
+    }
+}
+
+fn parens(input: &str) -> IResult<&str, Expr> {
+    delimited(
+        multispace0,
+        delimited(tag("("), map(expr, |e| Expr::Paren(Box::new(e))), tag(")")),
+        multispace0,
+    )
+    .parse(input)
+}
+
+fn factor(input: &str) -> IResult<&str, Expr> {
+    alt((
+        map(
+            delimited(multispace0, concrete_number, multispace0),
+            Expr::Value,
+        ),
+        parens,
+    ))
+    .parse(input)
+}
+
+fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
+    remainder.into_iter().fold(initial, |acc, pair| {
+        let (oper, expr) = pair;
+        match oper {
+            Oper::Add => Expr::Add(Box::new(acc), Box::new(expr)),
+            Oper::Sub => Expr::Sub(Box::new(acc), Box::new(expr)),
+            Oper::Mul => Expr::Mul(Box::new(acc), Box::new(expr)),
+            Oper::Div => Expr::Div(Box::new(acc), Box::new(expr)),
+        }
+    })
+}
+
+fn term_mul(input: &str) -> IResult<&str, (Oper, Expr)> {
+    let (input, mul) = preceded(tag("*"), factor).parse(input)?;
+    Ok((input, (Oper::Mul, mul)))
+}
+
+fn term_div(input: &str) -> IResult<&str, (Oper, Expr)> {
+    let (input, div) = preceded(tag("/"), factor).parse(input)?;
+    Ok((input, (Oper::Mul, div)))
+}
+
+pub fn term(input: &str) -> IResult<&str, Expr> {
+    let (input, initial) = factor(input)?;
+    let (i, remainder) = many0(alt((term_mul, term_div))).parse(input)?;
+
+    Ok((i, fold_exprs(initial, remainder)))
+}
+
+fn expr_add(input: &str) -> IResult<&str, (Oper, Expr)> {
+    let (input, add) = preceded(tag("+"), term).parse(input)?;
+    Ok((input, (Oper::Add, add)))
+}
+
+fn expr_sub(input: &str) -> IResult<&str, (Oper, Expr)> {
+    let (input, sub) = preceded(tag("-"), term).parse(input)?;
+    Ok((input, (Oper::Sub, sub)))
+}
+
+pub fn expr(input: &str) -> IResult<&str, Expr> {
+    let (input, initial) = term(input)?;
+    let (input, remainder) = many0(alt((expr_add, expr_sub))).parse(input)?;
+
+    Ok((input, fold_exprs(initial, remainder)))
 }
