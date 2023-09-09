@@ -119,6 +119,7 @@ impl Debug for PhysicalQuantity {
             self.amount_of_substance,
             self.luminous_intensity,
         ) {
+            ( 0,  0,  0,  0,  0,  0,  0) => write!(f, "Unit(Dimensionless)"),
             ( 1,  0,  0,  0,  0,  0,  0) => write!(f, "Unit(Time)"), // Second (s)
             ( 0,  1,  0,  0,  0,  0,  0) => write!(f, "Unit(Length)"), // Metre (m)
             ( 0,  0,  1,  0,  0,  0,  0) => write!(f, "Unit(Mass)"), // Kilogram (kg)
@@ -413,15 +414,17 @@ fn main() {
         "12 kg m^2",
         "12 W^1 m^2",
         "15   N m * 12 kg *   92",
+        "23 + 58",
     ];
     for input in inputs {
-        println!("{} => {:?}", input, parser::concrete_number(input));
+        let (remaining, concrete_number) = parser::concrete_number(input).unwrap();
+        println!("\"{}\" => {} | {}", input, remaining, concrete_number);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{ConcreteNumber, PhysicalQuantity, PhysicalQuantityBuilder};
+    use crate::{ConcreteNumber, PhysicalQuantity, PhysicalQuantityBuilder, parser};
 
     #[test]
     fn build_metre() {
@@ -445,5 +448,12 @@ mod tests {
         let time: ConcreteNumber = ConcreteNumber::new(2.0, time_unit);
         let acceleration = length / (time * time.clone());
         assert_eq!(format!("{}", acceleration), "3.25 m s^-2");
+    }
+
+    #[test]
+    fn parse_time_and_print() {
+        let time: &str = "3 s";
+        let concrete_time = parser::concrete_number(time).unwrap().1;
+        assert_eq!(format!("{}", concrete_time), time)
     }
 }
