@@ -1,3 +1,5 @@
+mod parser;
+
 use std::{
     fmt::{Debug, Display},
     ops::{Add, Div, Mul, Sub},
@@ -343,26 +345,33 @@ impl Div for ConcreteNumber {
 //     let (input, (magnitude, physical_quantity)) = (float_from_str, ).parse(input)?;
 // };
 
-fn main() {
-    let length_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().length(1).build();
-    let length: ConcreteNumber = ConcreteNumber::new(13.0, length_unit);
-    println!("{} | {:?}", length, length);
-    let time_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().time(1).build();
-    let time: ConcreteNumber = ConcreteNumber::new(2.0, time_unit);
-    println!("{} | {:?}", time, time);
-    let acceleration = length / (time * time.clone());
-    println!("{} | {:?}", acceleration, acceleration);
+fn main() {}
+
+#[cfg(test)]
+mod tests {
+    use crate::{ConcreteNumber, PhysicalQuantity, PhysicalQuantityBuilder};
+
+    #[test]
+    fn build_metre() {
+        let length_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().length(1).build();
+        let length: ConcreteNumber = ConcreteNumber::new(13.0, length_unit);
+        assert_eq!(format!("{}", length), "13 m")
+    }
+
+    #[test]
+    fn build_time() {
+        let time_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().time(1).build();
+        let time: ConcreteNumber = ConcreteNumber::new(2.0, time_unit);
+        assert_eq!(format!("{}", time), "2 s");
+    }
+
+    #[test]
+    fn build_acceleration() {
+        let length_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().length(1).build();
+        let length: ConcreteNumber = ConcreteNumber::new(13.0, length_unit);
+        let time_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().time(1).build();
+        let time: ConcreteNumber = ConcreteNumber::new(2.0, time_unit);
+        let acceleration = length / (time * time.clone());
+        assert_eq!(format!("{}", acceleration), "3.25 m s^-2");
+    }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use crate::{ConcreteNumber, PhysicalQuantity};
-
-//     #[test]
-//     fn parse_1_metre() {
-//         let input: &str = "1 m";
-//         let output: ConcreteNumber =
-//             ConcreteNumber::new(1, PhysicalQuantity::new(0, 1, 0, 0, 0, 0, 0));
-//         assert_eq!(concrete_number(input), output)
-//     }
-// }
