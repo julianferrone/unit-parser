@@ -70,6 +70,7 @@ impl Display for PhysicalQuantity {
             (3, -2, -1, 2, 0, 0, 0) => write!(f, "S"),  // Siemens (S) = kg^−1 * m^−2 * s^3 * A^2
             (-2, 2, 1, -2, 0, 0, 0) => write!(f, "H"),  // Henry (H) = kg * m^2 * s^−2 * A^−2
             (1, 0, 0, 0, 0, 1, 0) => write!(f, "kat"),  // Katal (kat) = mol * s^-1
+            (0, 0, 0, 0, 0, 0, 0) => write!(f, "dimensionless"), // dimension-less
             _ => {
                 let mut units: Vec<(&str, isize)> = vec![];
                 if self.time != 0 {
@@ -351,9 +352,12 @@ impl ConcreteNumberBuilder {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum CustomError {
     AddingTwoDifferentUnits,
     SubtractingTwoDifferentUnits,
+    SubExpressionError,
+    ParseError(String),
 }
 
 impl Add for ConcreteNumber {
@@ -406,19 +410,30 @@ impl Div for ConcreteNumber {
     }
 }
 
+impl From<f64> for ConcreteNumber {
+    fn from(value: f64) -> Self {
+        ConcreteNumberBuilder::new().magnitude(value).build()
+    }
+}
+
 fn main() {
     let inputs: Vec<&str> = vec![
         "3 m",
-        "4 kg",
+        "-4 kg",
+        "(0kg - 5 kg)",
         "5 m^2",
         "12 kg m^2",
         "12 W^1 m^2",
+        "3 W * 4 m * 1 m",
         "15   N m * 12 kg *   92",
-        "23 + 58",
+        "(15   N m * 12 kg * 92)",
+        "(23 + 58)",
+        "((12 + 13))",
+        "(12 T * 13 m)",
     ];
     for input in inputs {
-        let (remaining, concrete_number) = parser::concrete_number(input).unwrap();
-        println!("\"{}\" => {} | {}", input, remaining, concrete_number);
+        let result = parser::evaluate_physical_equation(input);
+        println!("Input: \"{}\" => result: \"{:?}\"", input, result);
     }
 }
 
@@ -453,7 +468,17 @@ mod tests {
     #[test]
     fn parse_time_and_print() {
         let time: &str = "3 s";
-        let concrete_time = parser::concrete_number(time).unwrap().1;
-        assert_eq!(format!("{}", concrete_time), time)
+        let concrete_time = parser::evaluate_physical_equation(time).unwrap();
+        assert_eq!(format!("{}", concrete_time), time);
+    }
+
+    #[test]
+    fn explicit_and_implicit_unit_multiplication_should_match() {
+        let cn_1 = "3 W m^3";
+        let cn_2 = "3 W * 1 m * 1 m^2";
+        assert_eq!(
+            parser::evaluate_physical_equation(cn_1),
+            parser::evaluate_physical_equation(cn_2)
+        );
     }
 }
