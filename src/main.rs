@@ -1,5 +1,5 @@
 use std::{
-    fmt::{format, Debug, Display},
+    fmt::{Debug, Display},
     ops::{Add, Div, Mul, Sub},
 };
 
@@ -94,9 +94,12 @@ impl Display for PhysicalQuantity {
                 units.sort_by(|a, b| a.0.cmp(b.0));
                 let concatenated: Vec<String> = units
                     .into_iter()
-                    .map(|(unit, exponent)| format!("{unit}^{exponent}"))
+                    .map(|(unit, exponent)| match exponent {
+                        1 => format!("{unit}"),
+                        _ => format!("{unit}^{exponent}"),
+                    })
                     .collect();
-                let compound_unit: String = concatenated.join(" * ");
+                let compound_unit: String = concatenated.join(" ");
                 write!(f, "{}", compound_unit)
             }
         }
@@ -190,6 +193,77 @@ impl Div for PhysicalQuantity {
     }
 }
 
+struct PhysicalQuantityBuilder {
+    time: isize,
+    length: isize,
+    mass: isize,
+    current: isize,
+    temperature: isize,
+    amount_of_substance: isize,
+    luminous_intensity: isize,
+}
+
+impl PhysicalQuantityBuilder {
+    fn new() -> Self {
+        PhysicalQuantityBuilder {
+            time: 0,
+            length: 0,
+            mass: 0,
+            current: 0,
+            temperature: 0,
+            amount_of_substance: 0,
+            luminous_intensity: 0,
+        }
+    }
+
+    fn time(mut self, time: isize) -> Self {
+        self.time = time;
+        self
+    }
+
+    fn length(mut self, length: isize) -> Self {
+        self.length = length;
+        self
+    }
+
+    fn mass(mut self, mass: isize) -> Self {
+        self.mass = mass;
+        self
+    }
+
+    fn current(mut self, current: isize) -> Self {
+        self.current = current;
+        self
+    }
+
+    fn temperature(mut self, temperature: isize) -> Self {
+        self.temperature = temperature;
+        self
+    }
+
+    fn amount_of_substance(mut self, amount_of_substance: isize) -> Self {
+        self.amount_of_substance = amount_of_substance;
+        self
+    }
+
+    fn luminous_intensity(mut self, luminous_intensity: isize) -> Self {
+        self.luminous_intensity = luminous_intensity;
+        self
+    }
+
+    fn build(self) -> PhysicalQuantity {
+        PhysicalQuantity {
+            time: self.time,
+            length: self.length,
+            mass: self.mass,
+            current: self.current,
+            temperature: self.temperature,
+            amount_of_substance: self.amount_of_substance,
+            luminous_intensity: self.luminous_intensity,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct ConcreteNumber {
     magnitude: f64,
@@ -265,22 +339,30 @@ impl Div for ConcreteNumber {
     }
 }
 
+// fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
+//     let (input, (magnitude, physical_quantity)) = (float_from_str, ).parse(input)?;
+// };
+
 fn main() {
-    let length = ConcreteNumber::new(13.0, PhysicalQuantity::new(0, 1, 0, 0, 0, 0, 0));
+    let length_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().length(1).build();
+    let length: ConcreteNumber = ConcreteNumber::new(13.0, length_unit);
     println!("{} | {:?}", length, length);
-    let time = ConcreteNumber::new(
-        2.0,
-        PhysicalQuantity {
-            time: 1,
-            length: 0,
-            mass: 0,
-            current: 0,
-            temperature: 0,
-            amount_of_substance: 0,
-            luminous_intensity: 0,
-        },
-    );
+    let time_unit: PhysicalQuantity = PhysicalQuantityBuilder::new().time(1).build();
+    let time: ConcreteNumber = ConcreteNumber::new(2.0, time_unit);
     println!("{} | {:?}", time, time);
     let acceleration = length / (time * time.clone());
     println!("{} | {:?}", acceleration, acceleration);
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use crate::{ConcreteNumber, PhysicalQuantity};
+
+//     #[test]
+//     fn parse_1_metre() {
+//         let input: &str = "1 m";
+//         let output: ConcreteNumber =
+//             ConcreteNumber::new(1, PhysicalQuantity::new(0, 1, 0, 0, 0, 0, 0));
+//         assert_eq!(concrete_number(input), output)
+//     }
+// }
