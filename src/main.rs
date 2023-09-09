@@ -319,6 +319,37 @@ impl Display for ConcreteNumber {
     }
 }
 
+struct ConcreteNumberBuilder {
+    magnitude: f64,
+    physical_quantity: PhysicalQuantity,
+}
+
+impl ConcreteNumberBuilder {
+    fn new() -> Self {
+        Self {
+            magnitude: 0f64,
+            physical_quantity: PhysicalQuantityBuilder::new().build(),
+        }
+    }
+
+    fn magnitude(mut self, magnitude: f64) -> Self {
+        self.magnitude = magnitude;
+        self
+    }
+
+    fn physical_quantity(mut self, physical_quantity: PhysicalQuantity) -> Self {
+        self.physical_quantity = physical_quantity;
+        self
+    }
+
+    fn build(self) -> ConcreteNumber {
+        ConcreteNumber {
+            magnitude: self.magnitude,
+            physical_quantity: self.physical_quantity,
+        }
+    }
+}
+
 enum CustomError {
     AddingTwoDifferentUnits,
     SubtractingTwoDifferentUnits,
