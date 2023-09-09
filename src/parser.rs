@@ -12,7 +12,7 @@ use nom::{
     IResult,
 };
 
-use crate::{PhysicalQuantity, PhysicalQuantityBuilder};
+use crate::{ConcreteNumber, ConcreteNumberBuilder, PhysicalQuantity, PhysicalQuantityBuilder};
 
 // fn nonws_char(c: char) -> bool {
 //     !is_space(c as u8) && !is_newline(c as u8)
@@ -115,8 +115,20 @@ fn combined_unit(input: &str) -> IResult<&str, PhysicalQuantity> {
     Ok((units.0, combined_unit))
 }
 
-pub fn concrete_number(input: &str) -> IResult<&str, (f64, PhysicalQuantity)> {
+pub fn get_concrete_number_as_tuple(input: &str) -> IResult<&str, (f64, PhysicalQuantity)> {
     separated_pair(double, many1(char(' ')), combined_unit)(input)
+}
+
+pub fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
+    map(
+        get_concrete_number_as_tuple,
+        |(magnitude, physical_quantity)| {
+            ConcreteNumberBuilder::new()
+                .magnitude(magnitude)
+                .physical_quantity(physical_quantity)
+                .build()
+        },
+    )(input)
 }
 
 // fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
