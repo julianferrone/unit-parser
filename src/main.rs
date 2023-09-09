@@ -266,6 +266,38 @@ impl PhysicalQuantityBuilder {
     }
 }
 
+impl Mul for PhysicalQuantityBuilder {
+    type Output = PhysicalQuantityBuilder;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let product: PhysicalQuantityBuilder = PhysicalQuantityBuilder::new();
+        product
+            .time(self.time + rhs.time)
+            .length(self.length + rhs.length)
+            .mass(self.mass + rhs.mass)
+            .current(self.current + rhs.current)
+            .temperature(self.temperature + rhs.temperature)
+            .amount_of_substance(self.amount_of_substance + rhs.amount_of_substance)
+            .luminous_intensity(self.luminous_intensity + rhs.luminous_intensity)
+    }
+}
+
+impl Div for PhysicalQuantityBuilder {
+    type Output = PhysicalQuantityBuilder;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        let quotient: PhysicalQuantityBuilder = PhysicalQuantityBuilder::new();
+        quotient
+            .time(self.time + rhs.time)
+            .length(self.length + rhs.length)
+            .mass(self.mass + rhs.mass)
+            .current(self.current + rhs.current)
+            .temperature(self.temperature + rhs.temperature)
+            .amount_of_substance(self.amount_of_substance + rhs.amount_of_substance)
+            .luminous_intensity(self.luminous_intensity + rhs.luminous_intensity)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct ConcreteNumber {
     magnitude: f64,
@@ -343,7 +375,14 @@ impl Div for ConcreteNumber {
 }
 
 fn main() {
-    let inputs: Vec<&str> = vec!["3 m", "4 kg", "5 m^2", "12 kg m^2", "12 W^1 m^2", "15   N m * 12 kg *   92"];
+    let inputs: Vec<&str> = vec![
+        "3 m",
+        "4 kg",
+        "5 m^2",
+        "12 kg m^2",
+        "12 W^1 m^2",
+        "15   N m * 12 kg *   92",
+    ];
     for input in inputs {
         println!("{:?}", parser::concrete_number(input));
     }
