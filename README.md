@@ -13,3 +13,4 @@ A concrete number is a number associated with the thing it's counting. Here I'm 
 - [x] Write lexer to convert string inputs into concrete numbers
 - [ ] Write parser to evaluate math expressions and output result, including unit conversion
 - [ ] Process SI prefixes
+- [ ] Implement unit conversion
