@@ -1,13 +1,14 @@
 use nom::{
+    branch::alt,
     bytes::complete::{tag, take_while1},
     character::{
         complete::{char, digit1},
         is_alphabetic, is_newline, is_space,
     },
-    combinator::{map, recognize, map_res, opt},
+    combinator::{map, map_res, opt, recognize},
     multi::{many0, many1, separated_list0},
     number::complete::{double, float},
-    sequence::{pair, separated_pair, tuple, preceded},
+    sequence::{pair, preceded, separated_pair, tuple},
     IResult,
 };
 
@@ -32,7 +33,10 @@ fn parse_isize(input: &str) -> IResult<&str, isize> {
 }
 
 pub fn unit(input: &str) -> IResult<&str, (&str, isize)> {
-    separated_pair(word, char('^'), parse_isize)(input)
+    alt((
+        separated_pair(word, char('^'), parse_isize),
+        map(word, |s: &str| (s, 1isize)),
+    ))(input)
 }
 
 fn units(input: &str) -> IResult<&str, Vec<(&str, isize)>> {
