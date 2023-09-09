@@ -424,7 +424,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ConcreteNumber, PhysicalQuantity, PhysicalQuantityBuilder, parser};
+    use crate::{parser, ConcreteNumber, PhysicalQuantity, PhysicalQuantityBuilder};
 
     #[test]
     fn build_metre() {
