@@ -289,6 +289,7 @@ impl Display for ConcreteNumber {
 
 enum CustomError {
     AddingTwoDifferentUnits,
+    SubtractingTwoDifferentUnits,
 }
 
 impl Add for ConcreteNumber {
@@ -310,7 +311,7 @@ impl Sub for ConcreteNumber {
 
     fn sub(self, rhs: Self) -> Self::Output {
         if self.physical_quantity != rhs.physical_quantity {
-            Err(CustomError::AddingTwoDifferentUnits)
+            Err(CustomError::SubtractingTwoDifferentUnits)
         } else {
             let quantity: f64 = self.magnitude - rhs.magnitude;
             let difference: ConcreteNumber = ConcreteNumber::new(quantity, self.physical_quantity);
