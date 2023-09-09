@@ -343,7 +343,7 @@ impl Div for ConcreteNumber {
 }
 
 fn main() {
-    let inputs: Vec<&str> = vec!["3 m", "4 kg", "5 m^2", "12 kg m^2", "15   N m * 12 kg *   92"];
+    let inputs: Vec<&str> = vec!["3 m", "4 kg", "5 m^2", "12 kg m^2", "12 W^1 m^2", "15   N m * 12 kg *   92"];
     for input in inputs {
         println!("{:?}", parser::concrete_number(input));
     }
