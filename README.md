@@ -9,6 +9,7 @@ A concrete number is a number associated with the thing it's counting. Here I'm 
 
 ## Todo:
 
-- [x] Model concrete numbers in data
+- [x] Model concrete numbers
 - [ ] Write lexer to convert string inputs into concrete numbers
 - [ ] Write parser to evaluate math expressions and output result, including unit conversion
+- [ ] Process SI prefixes
