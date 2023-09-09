@@ -5,7 +5,7 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct PhysicalQuantity {
     time: isize,
     length: isize,
@@ -34,6 +34,80 @@ impl PhysicalQuantity {
             temperature,
             amount_of_substance,
             luminous_intensity,
+        }
+    }
+
+    fn dimensions(self) -> String {
+        match (
+            self.time,
+            self.length,
+            self.mass,
+            self.current,
+            self.temperature,
+            self.amount_of_substance,
+            self.luminous_intensity,
+        ) {
+            (0, 0, 0, 0, 0, 0, 0) => "Dimension(Dimensionless)".to_owned(),
+            (1, 0, 0, 0, 0, 0, 0) => "Dimension(Time)".to_owned(), // Second (s)
+            (0, 1, 0, 0, 0, 0, 0) => "Dimension(Length)".to_owned(), // Metre (m)
+            (0, 0, 1, 0, 0, 0, 0) => "Dimension(Mass)".to_owned(), // Kilogram (kg)
+            (0, 0, 0, 1, 0, 0, 0) => "Dimension(Current)".to_owned(), // Ampere (A)
+            (0, 0, 0, 0, 1, 0, 0) => "Dimension(Temperature)".to_owned(), //  Kelvin (K)
+            (0, 0, 0, 0, 0, 1, 0) => "Dimension(AmountOfSubstance)".to_owned(), // Mole (mol)
+            (0, 0, 0, 0, 0, 0, 1) => "Dimension(LuminousIntensity)".to_owned(), // Candela (cd)
+            (-1, 0, 0, 0, 0, 0, 0) => "Dimension(Frequency)".to_owned(), // Hertz (Hz) = second^-1
+            (-2, 1, 1, 0, 0, 0, 0) => "Dimension(Force)".to_owned(), // Newton (N)= kg * m * s^-2
+            (-2, -1, 1, 0, 0, 0, 0) => "Dimension(Pressure)".to_owned(), // Pascal (Pa)= N * m^-2 = kg * m^-1 * s^-2
+            (-2, 2, 1, 0, 0, 0, 0) => "Dimension(Energy)".to_owned(), // Joule (J) = N * m = kg * m^2 * s^-2
+            (-3, 2, 1, 0, 0, 0, 0) => "Dimension(Power)".to_owned(), // Power (W) = J * s^-1 = kg * m^2 * s^-3
+            (1, 0, 0, 1, 0, 0, 0) => "Dimension(ElectricCharge)".to_owned(), // Coulomb (C) = A * s
+            (-3, 2, 1, -1, 0, 0, 0) => "Dimension(ElectricPotential)".to_owned(), // Volt (V) = J * C^-1 = kg * m^2 * s^-3 * A^-1
+            (-2, 2, 1, -1, 0, 0, 0) => "Dimension(MagneticFlux)".to_owned(), // Weber (Wb) = V * s = kg * m^2 * s^-2 * A^-1
+            (-2, 0, 1, -1, 0, 0, 0) => "Dimension(MagneticFluxDensity)".to_owned(), // Tesla (T) = Wb * m^-2 = kg * s^-2 * A^-1
+            (4, -2, -1, 2, 0, 0, 0) => "Dimension(ElectricalCapacitance)".to_owned(), // Farad (F) = kg^-1 * m^-2 * s^4 * A^2
+            (-3, 2, 1, -2, 0, 0, 0) => "Dimension(ElectricalResistance)".to_owned(), // Ohm (Ω) = kg * m^2 * s^−3 * A^−2
+            (3, -2, -1, 2, 0, 0, 0) => "Dimension(ElectricalConductance)".to_owned(), // Siemens (S) = kg^−1 * m^−2 * s^3 * A^2
+            (-2, 2, 1, -2, 0, 0, 0) => "Dimension(ElectricalInductance)".to_owned(), // Henry (H) = kg * m^2 * s^−2 * A^−2
+            (1, 0, 0, 0, 0, 1, 0) => "Dimension(CatalyticActivity)".to_owned(), // Katal (kat) = mol * s^-1
+            (0, 2, 0, 0, 0, 0, 0) => "Dimension(Area)".to_owned(),
+            (0, 3, 0, 0, 0, 0, 0) => "Dimension(Volume)".to_owned(),
+            (-1, 1, 0, 0, 0, 0, 0) => "Dimension(Speed)".to_owned(),
+            (-2, 1, 0, 0, 0, 0, 0) => "Dimension(Acceleration)".to_owned(),
+            (-1, 3, 0, 0, 0, 0, 0) => "Dimension(VolumetricFlow)".to_owned(),
+            (-1, 1, 1, 0, 0, 0, 0) => "Dimension(Momentum)".to_owned(),
+            _ => {
+                let mut units: Vec<(&str, isize)> = vec![];
+                if self.time != 0 {
+                    units.push(("Time", self.time));
+                }
+                if self.length != 0 {
+                    units.push(("Length", self.length));
+                }
+                if self.mass != 0 {
+                    units.push(("Mass", self.mass));
+                }
+                if self.current != 0 {
+                    units.push(("Current", self.current));
+                }
+                if self.temperature != 0 {
+                    units.push(("Temperature", self.temperature));
+                }
+                if self.amount_of_substance != 0 {
+                    units.push(("AmountOfSubstance", self.amount_of_substance));
+                }
+                if self.luminous_intensity != 0 {
+                    units.push(("LuminousIntensity", self.luminous_intensity));
+                }
+                units.sort_by(|a, b| a.0.cmp(b.0));
+                let concatenated: Vec<String> = units
+                    .into_iter()
+                    .map(|(unit, exponent)| match exponent {
+                        1 => format!("{unit}"),
+                        _ => format!("{unit}^{exponent}"),
+                    })
+                    .collect();
+                concatenated.join(" ")
+            }
         }
     }
 }
@@ -105,60 +179,6 @@ impl Display for PhysicalQuantity {
                 let compound_unit: String = concatenated.join(" ");
                 write!(f, "{}", compound_unit)
             }
-        }
-    }
-}
-
-impl Debug for PhysicalQuantity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match (
-            self.time,
-            self.length,
-            self.mass,
-            self.current,
-            self.temperature,
-            self.amount_of_substance,
-            self.luminous_intensity,
-        ) {
-            ( 0,  0,  0,  0,  0,  0,  0) => write!(f, "Unit(Dimensionless)"),
-            ( 1,  0,  0,  0,  0,  0,  0) => write!(f, "Unit(Time)"), // Second (s)
-            ( 0,  1,  0,  0,  0,  0,  0) => write!(f, "Unit(Length)"), // Metre (m)
-            ( 0,  0,  1,  0,  0,  0,  0) => write!(f, "Unit(Mass)"), // Kilogram (kg)
-            ( 0,  0,  0,  1,  0,  0,  0) => write!(f, "Unit(Current)"), // Ampere (A)
-            ( 0,  0,  0,  0,  1,  0,  0) => write!(f, "Unit(Temperature)"), //  Kelvin (K)
-            ( 0,  0,  0,  0,  0,  1,  0) => write!(f, "Unit(AmountOfSubstance)"), // Mole (mol)
-            ( 0,  0,  0,  0,  0,  0,  1) => write!(f, "Unit(LuminousIntensity)"), // Candela (cd)
-            (-1,  0,  0,  0,  0,  0,  0) => write!(f, "Unit(Frequency)"), // Hertz (Hz) = second^-1
-            (-2,  1,  1,  0,  0,  0,  0) => write!(f, "Unit(Force)"), // Newton (N)= kg * m * s^-2
-            (-2, -1,  1,  0,  0,  0,  0) => write!(f, "Unit(Pressure)"), // Pascal (Pa)= N * m^-2 = kg * m^-1 * s^-2
-            (-2,  2,  1,  0,  0,  0,  0) => write!(f, "Unit(Energy)"), // Joule (J) = N * m = kg * m^2 * s^-2
-            (-3,  2,  1,  0,  0,  0,  0) => write!(f, "Unit(Power)"), // Power (W) = J * s^-1 = kg * m^2 * s^-3
-            ( 1,  0,  0,  1,  0,  0,  0) => write!(f, "Unit(ElectricCharge)"), // Coulomb (C) = A * s
-            (-3,  2,  1, -1,  0,  0,  0) => write!(f, "Unit(ElectricPotential)"), // Volt (V) = J * C^-1 = kg * m^2 * s^-3 * A^-1
-            (-2,  2,  1, -1,  0,  0,  0) => write!(f, "Unit(MagneticFlux)"), // Weber (Wb) = V * s = kg * m^2 * s^-2 * A^-1
-            (-2,  0,  1, -1,  0,  0,  0) => write!(f, "Unit(MagneticFluxDensity)"), // Tesla (T) = Wb * m^-2 = kg * s^-2 * A^-1
-            ( 4, -2, -1,  2,  0,  0,  0) => write!(f, "Unit(ElectricalCapacitance)"), // Farad (F) = kg^-1 * m^-2 * s^4 * A^2
-            (-3,  2,  1, -2,  0,  0,  0) => write!(f, "Unit(ElectricalResistance)"), // Ohm (Ω) = kg * m^2 * s^−3 * A^−2
-            ( 3, -2, -1,  2,  0,  0,  0) => write!(f, "Unit(ElectricalConductance)"), // Siemens (S) = kg^−1 * m^−2 * s^3 * A^2
-            (-2,  2,  1, -2,  0,  0,  0) => write!(f, "Unit(ElectricalInductance)"), // Henry (H) = kg * m^2 * s^−2 * A^−2
-            ( 1,  0,  0,  0,  0,  1,  0) => write!(f, "Unit(CatalyticActivity)"), // Katal (kat) = mol * s^-1
-            ( 0,  2,  0,  0,  0,  0,  0) => write!(f, "Unit(Area)"),
-            ( 0,  3,  0,  0,  0,  0,  0) => write!(f, "Unit(Volume)"),
-            (-1,  1,  0,  0,  0,  0,  0) => write!(f, "Unit(Speed)"),
-            (-2,  1,  0,  0,  0,  0,  0) => write!(f, "Unit(Acceleration)"),
-            (-1,  3,  0,  0,  0,  0,  0) => write!(f, "Unit(VolumetricFlow)"),
-            (-1,  1,  1,  0,  0,  0,  0) => write!(f, "Unit(Momentum)"),
-            _ => write!(
-                f,
-                "Unit(Time^{}, Length^{}, Mass^{}, Current^{}, Temperature^{}, AmountOfSubstance^{}, LuminousIntensity^{})",
-                self.time,
-                self.length,
-                self.mass,
-                self.current,
-                self.temperature,
-                self.amount_of_substance,
-                self.luminous_intensity
-            ),
         }
     }
 }
@@ -419,7 +439,11 @@ impl From<f64> for ConcreteNumber {
 fn main() {
     let input: String = std::env::args().nth(1).expect("No input provided");
     let result = parser::evaluate_physical_equation(input.as_str());
-    println!("Input: \"{}\" => result: \"{:?}\"", input, result);
+    if result.is_ok() {
+        println!("Input: \"{}\" => result: \"{}\"", input, result.unwrap());
+    } else {
+        println!("ERROR: Input \"{}\" failed: {:?}", input, result.unwrap_err());
+    }
 }
 
 #[cfg(test)]
