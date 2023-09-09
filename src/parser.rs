@@ -122,7 +122,7 @@ pub fn get_concrete_number_as_tuple(input: &str) -> IResult<&str, (f64, Physical
     pair(ws(double), ws(combined_unit))(input)
 }
 
-pub fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
+ fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
     map(
         get_concrete_number_as_tuple,
         |(magnitude, physical_quantity)| {
@@ -134,7 +134,7 @@ pub fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
     )(input)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Expr {
     Value(ConcreteNumber),
     Add(Box<Expr>, Box<Expr>),
@@ -155,33 +155,41 @@ pub enum Oper {
 impl Expr {
     pub fn evaluate(self) -> Result<ConcreteNumber, CustomError> {
         match self {
-            Expr::Value(ConcreteNumber) => Ok(ConcreteNumber),
-            Expr::Add(A, B) => {
-                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
-                    A.clone().evaluate().unwrap() + B.clone().evaluate().unwrap()
+            Expr::Value(concrete_number) => Ok(concrete_number),
+            Expr::Add(expr_a, expr_b) => {
+                let expr_a = expr_a.clone().evaluate();
+                let expr_b = expr_b.clone().evaluate();
+                if expr_a.is_ok() && expr_b.is_ok() {
+                    expr_a.unwrap() + expr_b.unwrap()
                 } else {
-                    return Err(CustomError::OperandError);
+                    return Err(CustomError::SubExpressionError);
                 }
             }
-            Expr::Sub(A, B) => {
-                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
-                    A.clone().evaluate().unwrap() - B.clone().evaluate().unwrap()
+            Expr::Sub(expr_a, expr_b) => {
+                let expr_a = expr_a.clone().evaluate();
+                let expr_b = expr_b.clone().evaluate();
+                if expr_a.is_ok() && expr_b.is_ok() {
+                    expr_a.unwrap() - expr_b.unwrap()
                 } else {
-                    return Err(CustomError::OperandError);
+                    return Err(CustomError::SubExpressionError);
                 }
             }
-            Expr::Mul(A, B) => {
-                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
-                    Ok(A.clone().evaluate().unwrap() * B.clone().evaluate().unwrap())
+            Expr::Mul(expr_a, expr_b) => {
+                let expr_a = expr_a.clone().evaluate();
+                let expr_b = expr_b.clone().evaluate();
+                if expr_a.is_ok() && expr_b.is_ok() {
+                    Ok(expr_a.unwrap() * expr_b.unwrap())
                 } else {
-                    return Err(CustomError::OperandError);
+                    return Err(CustomError::SubExpressionError);
                 }
             }
-            Expr::Div(A, B) => {
-                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
-                    Ok(A.clone().evaluate().unwrap() / B.clone().evaluate().unwrap())
+            Expr::Div(expr_a, expr_b) => {
+                let expr_a = expr_a.clone().evaluate();
+                let expr_b = expr_b.clone().evaluate();
+                if expr_a.is_ok() && expr_b.is_ok() {
+                    Ok(expr_a.unwrap() / expr_b.unwrap())
                 } else {
-                    return Err(CustomError::OperandError);
+                    return Err(CustomError::SubExpressionError);
                 }
             }
             Expr::Paren(expression) => expression.clone().evaluate(),
@@ -203,19 +211,19 @@ impl Display for Expr {
     }
 }
 
-// impl Debug for Expr {
-//     fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
-//         use self::Expr::*;
-//         match *self {
-//             Value(val) => write!(format, "{}", val),
-//             Add(ref left, ref right) => write!(format, "({:?} + {:?})", left, right),
-//             Sub(ref left, ref right) => write!(format, "({:?} - {:?})", left, right),
-//             Mul(ref left, ref right) => write!(format, "({:?} * {:?})", left, right),
-//             Div(ref left, ref right) => write!(format, "({:?} / {:?})", left, right),
-//             Paren(ref expr) => write!(format, "[{:?}]", expr),
-//         }
-//     }
-// }
+impl Debug for Expr {
+    fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
+        use self::Expr::*;
+        match *self {
+            Value(val) => write!(format, "{}", val),
+            Add(ref left, ref right) => write!(format, "({:?} + {:?})", left, right),
+            Sub(ref left, ref right) => write!(format, "({:?} - {:?})", left, right),
+            Mul(ref left, ref right) => write!(format, "({:?} * {:?})", left, right),
+            Div(ref left, ref right) => write!(format, "({:?} / {:?})", left, right),
+            Paren(ref expr) => write!(format, "[{:?}]", expr),
+        }
+    }
+}
 
 fn parens(input: &str) -> IResult<&str, Expr> {
     delimited(
@@ -259,7 +267,7 @@ fn term_div(input: &str) -> IResult<&str, (Oper, Expr)> {
     Ok((input, (Oper::Div, div)))
 }
 
-pub fn term(input: &str) -> IResult<&str, Expr> {
+fn term(input: &str) -> IResult<&str, Expr> {
     let (input, initial) = factor(input)?;
     let (i, remainder) = many0(alt((term_mul, term_div))).parse(input)?;
 
@@ -276,9 +284,26 @@ fn expr_sub(input: &str) -> IResult<&str, (Oper, Expr)> {
     Ok((input, (Oper::Sub, sub)))
 }
 
-pub fn expr(input: &str) -> IResult<&str, Expr> {
+fn expr(input: &str) -> IResult<&str, Expr> {
     let (input, initial) = term(input)?;
     let (input, remainder) = many0(alt((expr_add, expr_sub))).parse(input)?;
 
     Ok((input, fold_exprs(initial, remainder)))
+}
+
+pub fn evaluate_physical_equation(input: &str) -> Result<ConcreteNumber, CustomError> {
+    let input = format!("({})", input);
+    let (remainder, expr) = expr(input.as_str()).or_else(|e| {
+        Err(CustomError::ParseError(format!(
+            "ERR: Could not parse input: {e}"
+        )))
+    })?;
+    if !remainder.is_empty() {
+        return Err(CustomError::ParseError(format!(
+            "ERR: Could not parse full input. Remaining input: {remainder}"
+        )));
+    } else {
+        let result = expr.evaluate();
+        result
+    }
 }
