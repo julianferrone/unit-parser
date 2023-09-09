@@ -14,10 +14,6 @@ use nom::{
 
 use crate::{ConcreteNumber, ConcreteNumberBuilder, PhysicalQuantity, PhysicalQuantityBuilder};
 
-// fn nonws_char(c: char) -> bool {
-//     !is_space(c as u8) && !is_newline(c as u8)
-// }
-
 fn alphabet_char(c: char) -> bool {
     is_alphabetic(c as u8)
 }
@@ -130,7 +126,3 @@ pub fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
         },
     )(input)
 }
-
-// fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
-//     let (input, (magnitude, physical_quantity)) = (float_from_str, ).parse(input)?;
-// };
