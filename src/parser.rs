@@ -1,6 +1,4 @@
-use std::{
-    fmt::{self, Debug, Display, Formatter},
-};
+use std::fmt::{self, Debug, Display, Formatter};
 
 use nom::{
     branch::alt,
