@@ -1,20 +1,17 @@
-use std::{
-    fmt::{self, Debug, Display, Formatter},
-    str::FromStr,
-};
+use std::fmt::{self, Debug, Display, Formatter};
 
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
     character::{
-        complete::{char, digit1, multispace0, space0, multispace1},
-        is_alphabetic, is_newline, is_space,
+        complete::{char, digit1, multispace0, multispace1},
+        is_alphabetic,
     },
-    combinator::{fail, map, map_res, opt, recognize},
-    error::context,
-    multi::{fold_many0, many0, many1, separated_list0},
-    number::complete::{double, float},
-    sequence::{delimited, pair, preceded, separated_pair, tuple},
+    combinator::{map, map_res, opt, recognize},
+    error::ParseError,
+    multi::{many0, many1, separated_list0},
+    number::complete::double,
+    sequence::{delimited, pair, preceded, separated_pair},
     IResult, Parser,
 };
 
@@ -98,6 +95,7 @@ fn unit_as_physical_quantity(input: &str) -> IResult<&str, PhysicalQuantity> {
                 .current(i * -2)
                 .build(),
             "kat" => pq.time(i * -1).amount_of_substance(i).build(),
+            "dimensionless" => pq.build(),
             // dimensionless for now—should really be an error
             _ => pq.build(),
         }
@@ -118,7 +116,7 @@ fn combined_unit(input: &str) -> IResult<&str, PhysicalQuantity> {
 }
 
 pub fn get_concrete_number_as_tuple(input: &str) -> IResult<&str, (f64, PhysicalQuantity)> {
-    separated_pair(double, many1(char(' ')), combined_unit)(input)
+    pair(ws(double), ws(combined_unit))(input)
 }
 
 pub fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
@@ -187,15 +185,15 @@ fn parens(input: &str) -> IResult<&str, Expr> {
     .parse(input)
 }
 
+fn ws<'a, F, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
+where
+    F: Parser<&'a str, O, E>,
+{
+    delimited(multispace0, inner, multispace0)
+}
+
 fn factor(input: &str) -> IResult<&str, Expr> {
-    alt((
-        map(
-            delimited(multispace0, concrete_number, multispace0),
-            Expr::Value,
-        ),
-        parens,
-    ))
-    .parse(input)
+    alt((map(ws(concrete_number), Expr::Value), parens)).parse(input)
 }
 
 fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
@@ -211,13 +209,13 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
 }
 
 fn term_mul(input: &str) -> IResult<&str, (Oper, Expr)> {
-    let (input, mul) = preceded(tag("*"), factor).parse(input)?;
+    let (input, mul) = preceded(ws(tag("*")), ws(factor)).parse(input)?;
     Ok((input, (Oper::Mul, mul)))
 }
 
 fn term_div(input: &str) -> IResult<&str, (Oper, Expr)> {
-    let (input, div) = preceded(tag("/"), factor).parse(input)?;
-    Ok((input, (Oper::Mul, div)))
+    let (input, div) = preceded(ws(tag("/")), ws(factor)).parse(input)?;
+    Ok((input, (Oper::Div, div)))
 }
 
 pub fn term(input: &str) -> IResult<&str, Expr> {
@@ -228,12 +226,12 @@ pub fn term(input: &str) -> IResult<&str, Expr> {
 }
 
 fn expr_add(input: &str) -> IResult<&str, (Oper, Expr)> {
-    let (input, add) = preceded(tag("+"), term).parse(input)?;
+    let (input, add) = preceded(ws(tag("+")), term).parse(input)?;
     Ok((input, (Oper::Add, add)))
 }
 
 fn expr_sub(input: &str) -> IResult<&str, (Oper, Expr)> {
-    let (input, sub) = preceded(tag("-"), term).parse(input)?;
+    let (input, sub) = preceded(ws(tag("-")), term).parse(input)?;
     Ok((input, (Oper::Sub, sub)))
 }
 
