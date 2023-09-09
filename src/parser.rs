@@ -1,4 +1,6 @@
-use std::fmt::{self, Debug, Display, Formatter};
+use std::{
+    fmt::{self, Debug, Display, Formatter},
+};
 
 use nom::{
     branch::alt,
@@ -15,7 +17,9 @@ use nom::{
     IResult, Parser,
 };
 
-use crate::{ConcreteNumber, ConcreteNumberBuilder, PhysicalQuantity, PhysicalQuantityBuilder};
+use crate::{
+    ConcreteNumber, ConcreteNumberBuilder, CustomError, PhysicalQuantity, PhysicalQuantityBuilder,
+};
 
 fn alphabet_char(c: char) -> bool {
     is_alphabetic(c as u8)
@@ -38,6 +42,7 @@ pub fn unit_as_tuple(input: &str) -> IResult<&str, (&str, isize)> {
         separated_pair(word, char('^'), parse_isize),
         map(word, |s: &str| (s, 1isize)),
     ))(input)
+    .or(Ok((input, ("dimensionless", 1isize))))
 }
 
 fn unit_as_physical_quantity(input: &str) -> IResult<&str, PhysicalQuantity> {
@@ -131,6 +136,7 @@ pub fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
     )(input)
 }
 
+#[derive(Clone, Debug)]
 pub enum Expr {
     Value(ConcreteNumber),
     Add(Box<Expr>, Box<Expr>),
@@ -148,6 +154,43 @@ pub enum Oper {
     Div,
 }
 
+impl Expr {
+    pub fn evaluate(self) -> Result<ConcreteNumber, CustomError> {
+        match self {
+            Expr::Value(ConcreteNumber) => Ok(ConcreteNumber),
+            Expr::Add(A, B) => {
+                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
+                    A.clone().evaluate().unwrap() + B.clone().evaluate().unwrap()
+                } else {
+                    return Err(CustomError::OperandError);
+                }
+            }
+            Expr::Sub(A, B) => {
+                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
+                    A.clone().evaluate().unwrap() - B.clone().evaluate().unwrap()
+                } else {
+                    return Err(CustomError::OperandError);
+                }
+            }
+            Expr::Mul(A, B) => {
+                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
+                    Ok(A.clone().evaluate().unwrap() * B.clone().evaluate().unwrap())
+                } else {
+                    return Err(CustomError::OperandError);
+                }
+            }
+            Expr::Div(A, B) => {
+                if A.clone().evaluate().is_ok() && B.clone().evaluate().is_ok() {
+                    Ok(A.clone().evaluate().unwrap() / B.clone().evaluate().unwrap())
+                } else {
+                    return Err(CustomError::OperandError);
+                }
+            }
+            Expr::Paren(expression) => expression.clone().evaluate(),
+        }
+    }
+}
+
 impl Display for Expr {
     fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
         use self::Expr::*;
@@ -162,19 +205,19 @@ impl Display for Expr {
     }
 }
 
-impl Debug for Expr {
-    fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
-        use self::Expr::*;
-        match *self {
-            Value(val) => write!(format, "{}", val),
-            Add(ref left, ref right) => write!(format, "({:?} + {:?})", left, right),
-            Sub(ref left, ref right) => write!(format, "({:?} - {:?})", left, right),
-            Mul(ref left, ref right) => write!(format, "({:?} * {:?})", left, right),
-            Div(ref left, ref right) => write!(format, "({:?} / {:?})", left, right),
-            Paren(ref expr) => write!(format, "[{:?}]", expr),
-        }
-    }
-}
+// impl Debug for Expr {
+//     fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
+//         use self::Expr::*;
+//         match *self {
+//             Value(val) => write!(format, "{}", val),
+//             Add(ref left, ref right) => write!(format, "({:?} + {:?})", left, right),
+//             Sub(ref left, ref right) => write!(format, "({:?} - {:?})", left, right),
+//             Mul(ref left, ref right) => write!(format, "({:?} * {:?})", left, right),
+//             Div(ref left, ref right) => write!(format, "({:?} / {:?})", left, right),
+//             Paren(ref expr) => write!(format, "[{:?}]", expr),
+//         }
+//     }
+// }
 
 fn parens(input: &str) -> IResult<&str, Expr> {
     delimited(
