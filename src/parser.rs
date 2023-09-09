@@ -9,7 +9,7 @@ use nom::{
     },
     combinator::{map, map_res, opt, recognize},
     error::ParseError,
-    multi::{many0, many1, separated_list0},
+    multi::{many0, separated_list0},
     number::complete::double,
     sequence::{delimited, pair, preceded, separated_pair},
     IResult, Parser,
