@@ -299,7 +299,7 @@ impl Div for PhysicalQuantityBuilder {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct ConcreteNumber {
+pub struct ConcreteNumber {
     magnitude: f64,
     physical_quantity: PhysicalQuantity,
 }
@@ -350,7 +350,7 @@ impl ConcreteNumberBuilder {
     }
 }
 
-enum CustomError {
+pub enum CustomError {
     AddingTwoDifferentUnits,
     SubtractingTwoDifferentUnits,
 }
