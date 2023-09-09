@@ -6,7 +6,7 @@ use nom::{
         is_alphabetic, is_newline, is_space,
     },
     combinator::{map, map_res, opt, recognize},
-    multi::{many0, many1, separated_list0},
+    multi::{fold_many0, many0, many1, separated_list0},
     number::complete::{double, float},
     sequence::{pair, preceded, separated_pair, tuple},
     IResult,
@@ -34,32 +34,43 @@ fn parse_isize(input: &str) -> IResult<&str, isize> {
     Ok((i, number))
 }
 
-pub fn unit_as_tuples(input: &str) -> IResult<&str, (&str, isize)> {
+pub fn unit_as_tuple(input: &str) -> IResult<&str, (&str, isize)> {
     alt((
         separated_pair(word, char('^'), parse_isize),
         map(word, |s: &str| (s, 1isize)),
     ))(input)
 }
 
-fn units_as_physical_quantities(input: &str) -> IResult<&str, PhysicalQuantity> {
-    map(unit_as_tuples, |(s, i)| match s {
+fn unit_as_physical_quantity(input: &str) -> IResult<&str, PhysicalQuantity> {
+    map(unit_as_tuple, |(s, i)| match s {
         "s" => PhysicalQuantityBuilder::new().time(i).build(),
         "m" => PhysicalQuantityBuilder::new().length(i).build(),
         "kg" => PhysicalQuantityBuilder::new().mass(i).build(),
         "A" => PhysicalQuantityBuilder::new().current(i).build(),
         "K" => PhysicalQuantityBuilder::new().temperature(i).build(),
-        "mol" => PhysicalQuantityBuilder::new().amount_of_substance(i).build(),
+        "mol" => PhysicalQuantityBuilder::new()
+            .amount_of_substance(i)
+            .build(),
         "cd" => PhysicalQuantityBuilder::new().luminous_intensity(i).build(),
         _ => PhysicalQuantityBuilder::new().build(),
     })(input)
 }
 
 fn units(input: &str) -> IResult<&str, Vec<PhysicalQuantity>> {
-    separated_list0(char(' '), units_as_physical_quantities)(input)
+    separated_list0(char(' '), unit_as_physical_quantity)(input)
 }
 
-pub fn concrete_number(input: &str) -> IResult<&str, (f64, Vec<PhysicalQuantity>)> {
-    separated_pair(double, many1(char(' ')), units)(input)
+fn combined_unit(input: &str) -> IResult<&str, PhysicalQuantity> {
+    let units = units(input)?;
+    let combined_unit = units
+        .1
+        .iter()
+        .fold(PhysicalQuantityBuilder::new().build(), |acc, &pq| acc * pq);
+    Ok((units.0, combined_unit))
+}
+
+pub fn concrete_number(input: &str) -> IResult<&str, (f64, PhysicalQuantity)> {
+    separated_pair(double, many1(char(' ')), combined_unit)(input)
 }
 
 // fn concrete_number(input: &str) -> IResult<&str, ConcreteNumber> {
