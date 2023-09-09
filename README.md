@@ -14,5 +14,6 @@ A concrete number is a number associated with the thing it's counting. Here I'm 
 - [x] Model concrete numbers
 - [x] Write lexer to convert string inputs into concrete numbers
 - [x] Write parser to evaluate math expressions and output result, including unit conversion
+- [x] Turn into CLI tool for command-line unit parsing
 - [ ] Process SI prefixes
 - [ ] Implement unit conversion

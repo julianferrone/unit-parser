@@ -417,24 +417,9 @@ impl From<f64> for ConcreteNumber {
 }
 
 fn main() {
-    let inputs: Vec<&str> = vec![
-        "3 m",
-        "-4 kg",
-        "(0kg - 5 kg)",
-        "5 m^2",
-        "12 kg m^2",
-        "12 W^1 m^2",
-        "3 W * 4 m * 1 m",
-        "15   N m * 12 kg *   92",
-        "(15   N m * 12 kg * 92)",
-        "(23 + 58)",
-        "((12 + 13))",
-        "(12 T * 13 m)",
-    ];
-    for input in inputs {
-        let result = parser::evaluate_physical_equation(input);
-        println!("Input: \"{}\" => result: \"{:?}\"", input, result);
-    }
+    let input: String = std::env::args().nth(1).expect("No input provided");
+    let result = parser::evaluate_physical_equation(input.as_str());
+    println!("Input: \"{}\" => result: \"{:?}\"", input, result);
 }
 
 #[cfg(test)]
